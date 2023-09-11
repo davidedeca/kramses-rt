@@ -1,0 +1,106 @@
+&RUN_PARAMS 
+poisson=.true.
+hydro=.true.
+nrestart=0
+nremap=0
+!ncontrol=1
+nstepmax=100000000
+verbose=.false.
+rt=.false.
+/
+
+&AMR_PARAMS
+levelmin=5
+levelmax=5
+ngridmax=300000
+boxlen=1.
+/
+
+&OUTPUT_PARAMS
+delta_tout=0.001
+tend=0.01
+/
+
+&INIT_PARAMS
+nregion=2
+region_type='square','square'
+x_center=0.5,0.5
+y_center=0.5,0.5
+z_center=0.5,0.5
+length_x=10.0,0.6
+length_y=10.0,0.6
+length_z=10.0,0.6
+exp_region=10.0,2.0
+d_region=0.01,0.668
+u_region=0.0,0.0
+v_region=0.0,0.0
+p_region=10.,10.
+var_region(:, 1) = 2*5.8497824015272034E-003
+var_region(:, 2) = 2*1.5034534432101563E-009
+var_region(:, 3) = 2*2.1452805979302284E-006
+var_region(:, 4) = 2*0.24749913957072803
+var_region(:, 5) = 2*3.3801033072684853E-007
+var_region(:, 6) = 2*1.3710505220123700E-035
+var_region(:, 7) = 2*1.1043352419529410E-013
+var_region(:, 8) = 2*0.74664753135335826
+var_region(:, 9) = 2*1.0618798940075338E-006
+/
+
+&BOUNDARY_PARAMS
+nboundary=6
+ibound_min=-1,+1,-1,-1,-1,-1
+ibound_max=-1,+1,+1,+1,+1,+1
+jbound_min= 0, 0,-1,+1,-1,-1
+jbound_max= 0, 0,-1,+1,+1,+1
+kbound_min= 0, 0, 0, 0,-1,+1
+kbound_max= 0, 0, 0, 0,-1,+1
+bound_type= 6*2
+/
+
+&COOLING_PARAMS
+cooling=.true.
+z_ave=1.
+/
+
+&UNITS_PARAMS
+units_density=1.5045865397729834e-20
+units_time=3.1557d13
+units_length=3.0857e18
+/
+
+&HYDRO_PARAMS
+gamma=1.4
+courant_factor=0.8
+scheme='muscl'
+slope_type=1
+pressure_fix=.true.
+/
+
+&POISSON_PARAMS
+gravity_type=0
+epsilon=1d-6
+cg_levelmin=100
+/
+
+&REFINE_PARAMS 
+m_refine=7*1.
+x_refine=7*0.5
+y_refine=7*0.5
+z_refine=7*0.5
+r_refine=7*0.5
+/
+
+&RT_PARAMS
+X=0.76                           ! Hydrogen mass fraction
+Y=0.24                           ! Helium mass fraction
+rt_output_coolstats=.true.
+rt_flux_scheme='glf'            ! HLL or GLF
+rt_courant_factor=0.8           ! Courant number for RT timesteps
+rt_c_fraction=0.001              ! Light speed fraction
+rt_err_grad_xHII=0.1
+rt_err_grad_xHI=0.1
+rt_err_grad_xH2=0.1
+rt_smooth=.false.                ! Smoothed RT to battle operator splitting
+rt_otsa=.true.                  ! On-the-spot approximation?
+rt_is_init_xion=.false.
+/

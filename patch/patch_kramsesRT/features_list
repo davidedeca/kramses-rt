@@ -1,0 +1,12 @@
+Here is a list of the extra features in this version of kramsesRT
+
+1. When a simulation is started, initial mass fraction abundances have to be specified with the parameter var_region in HYDRO_PARAMS, with rt_is_init_xion=.false. in RT_PARAMS. X and Y parameters should not be used anymore, but please set them in the namelist (RT_PARAMS) because ramses may crash otherwise.
+
+2. In the COOLING_PARAMS of the namelist, there is a CR_ionisation_rate parameter with default value 6.d-17. This is the H2 dissociation rate from cosmic rays.
+
+3. IN the COOLING_PARAMS of the namelist, there is a H2_dissociation_rate parameter with default value 7.9d-11 (approximate values from 10 Draine spectrum). This is the H2 dissociation rate for the Solomon process. The rate is set in krome as H2_dissociation_rate*J_LW / J_LW(1draine), so it is proportional to the intensity in the LW, assumption that is reasonable only for flat spectra.
+Please do not use the default value, which will not be a good approximation in most cases.s
+
+4. Now it is possible to read initial conditions from a binary unformatted file for hydro simulation (not cosmological). It is possible to generate this file with the cube_init.py script, and give its relative or absolute path to initfile(1) parameter in INIT_PARAMS
+
+5. for 1D simulations, the output is now saved in a file and contains more fields than in the original ramses.

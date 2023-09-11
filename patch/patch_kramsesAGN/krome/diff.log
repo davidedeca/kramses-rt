@@ -1,0 +1,451 @@
+8c8
+<   !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+>   !  KROME 14.08.dev on 2022-01-04 14:36:03
+33c33
+<   integer,parameter::nrea=52
+---
+>   integer,parameter::nrea=54
+102,103d101
+<   integer::krome_nfile, krome_nfile2
+< 
+163c161
+<   real*8::user_crate,user_myfluxLW,user_cell_size,user_myH2_dissociation
+---
+>   real*8::user_crate,user_myfluxLW,user_cell_size
+166a165,184
+>   real*8::user_xray_H_anytabx(30)
+>   real*8::user_xray_H_anytaby(30)
+>   real*8::user_xray_H_anytabz(30,30)
+>   real*8::user_xray_H_anytabxmul
+>   real*8::user_xray_H_anytabymul
+>   real*8::user_xheat_H_anytabx(30)
+>   real*8::user_xheat_H_anytaby(30)
+>   real*8::user_xheat_H_anytabz(30,30)
+>   real*8::user_xheat_H_anytabxmul
+>   real*8::user_xheat_H_anytabymul
+>   real*8::user_xray_He_anytabx(30)
+>   real*8::user_xray_He_anytaby(30)
+>   real*8::user_xray_He_anytabz(30,30)
+>   real*8::user_xray_He_anytabxmul
+>   real*8::user_xray_He_anytabymul
+>   real*8::user_xheat_He_anytabx(30)
+>   real*8::user_xheat_He_anytaby(30)
+>   real*8::user_xheat_He_anytabz(30,30)
+>   real*8::user_xheat_He_anytabxmul
+>   real*8::user_xheat_He_anytabymul
+874,903d891
+<   !*****************************
+<   function fevap(T, n)
+<     use krome_commons
+<     implicit none
+<     real*8::T,n(nspec),m(nspec),fevap,rhogas
+< 
+<     m(:) = get_mass()
+<     rhogas = sum(n(1:nmols)*m(1:nmols))
+< 
+<     if (T >= 1d5 .or. rhogas <= 200.) then
+<         fevap=0d0
+<     else
+<         fevap=1d0
+<     endif
+< 
+<     !if (T > 1.9d3) then
+<     !    fevap = 0d0
+<     !elseif (T < 7d2) then
+<     !    fevap = 1d0
+<     !else
+<     !    fevap = 0d0
+<     !    fevap = fevap + 0.425 * TANH(0.01973359 * (925.  - T))
+<     !    fevap = fevap + 0.072 * TANH(0.06906755 * (1250. - T))
+<     !    fevap = fevap + 0.003 * TANH(0.06906755 * (1650. - T))
+<     !    fevap = fevap + 0.5
+<     !endif
+< 
+<   end function fevap
+< 
+< 
+1553c1541
+<   !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+>   !  KROME 14.08.dev on 2022-01-04 14:36:03
+1976,1979c1964,1965
+<     shield_dust=1.d0
+< 
+<     !eff_d2g = dust2gas_ratio
+<     !sigma_d = 2d-21*eff_d2g*gam !Richings et al. 2014
+---
+>     eff_d2g = dust2gas_ratio
+>     sigma_d = 2d-21*eff_d2g*gam !Richings et al. 2014
+1984,1987c1970,1973
+<     !NHtot = 0d0
+<     !NHtot  = NHtot + num2col(n(idx_H),n(:))
+<     !NHtot  = NHtot + num2col(n(idx_Hj),n(:))
+<     !NHtot  = NHtot + 2d0 * num2col(n(idx_H2),n(:))
+---
+>     NHtot = 0d0
+>     NHtot  = NHtot + num2col(n(idx_H),n(:))
+>     NHtot  = NHtot + num2col(n(idx_Hj),n(:))
+>     NHtot  = NHtot + 2d0 * num2col(n(idx_H2),n(:))
+1989c1975
+<     !shield_dust = exp(-sigma_d*NHtot)
+---
+>     shield_dust = exp(-sigma_d*NHtot)
+2086c2072
+<     !krome_fshield =  calc_H2shieldR14(n(:), Tgas)
+---
+>     krome_fshield =  calc_H2shieldR14(n(:), Tgas)
+2163,2200d2148
+<   function calc_H2shieldR14_for_ramses(nH2_in,Tgas,length)
+<     use krome_commons
+<     use krome_constants
+<     implicit none
+<     real*8::n(nspec),Tgas,calc_H2shieldR14_for_ramses,N_H2,nH2, nH2_in,length
+<     real*8::xN_H2,b5,H_mass,bturb,btherm2
+<     real*8::alpha,omegaH2,Ncrit
+< 
+<     !check on H2 abundances to avoid weird numerical artifacts
+<     nH2 = max(1d-40, nH2_in)
+<     N_H2=  nH2 * length
+<     !    N_H2 = nH2*get_jeans_length(n(:) ,Tgas)*0.5d0  !column density (cm-2)
+<     H_mass = p_mass+e_mass !H mass in g
+<     bturb = 10.d0*km_to_cm !turbulent Doppler broadening parameter in cm/s
+<     btherm2 = boltzmann_erg*Tgas/H_mass !thermal Doppler broadening parameter cm/s
+< 
+<     !doppler broadening parameter b divided by 1d5 cm/s (#)
+<     b5 = ((btherm2 + bturb**2d0)**0.5)*1.d-5
+<     omegaH2 =0.013d0*(1d0+(Tgas/2.7d3)**1.3)**(1.0/1.3)*exp(-(Tgas/3.9d3)**14.6)
+< 
+<     if(Tgas<3d3)then
+<       alpha = 1.4
+<       Ncrit = 1.3d0*(1d0+(Tgas/6d2)**0.8)
+<     elseif(Tgas<4d3)then
+<       alpha = (Tgas/4.5d3)**(-0.8)
+<       Ncrit = (Tgas/4.76d3)**(-3.8)
+<     else
+<       alpha = 1.1
+<       Ncrit = 2.d0
+<     endif
+< 
+<     xN_H2 = N_H2*1d-14/Ncrit !normalized column density (#)
+< 
+<     calc_H2shieldR14_for_ramses = (1d0-omegaH2)/(1d0+xN_H2/b5)**alpha*exp(-5d-7*(1d0+xN_H2)) &
+<         +(omegaH2/sqrt(1d0+xN_H2))*exp(-8.5d-4*sqrt(1d0+xN_H2))
+< 
+<   end function calc_H2shieldR14_for_ramses
+< 
+2209c2157
+<   !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+>   !  KROME 14.08.dev on 2022-01-04 14:36:03
+2239a2188,2190
+>     real*8::phiHe !preproc from coevar
+>     real*8::ncolHe !preproc from coevar
+>     real*8::xe !preproc from coevar
+2241a2193
+>     real*8::user_xray_He !preproc from coevar
+2250a2203
+>     real*8::ratexH !preproc from coevar
+2253a2207,2208
+>     real*8::logHe !preproc from coevar
+>     real*8::phiH !preproc from coevar
+2262a2218,2219
+>     real*8::user_xray_H !preproc from coevar
+>     real*8::logH !preproc from coevar
+2263a2221
+>     real*8::ratexHe !preproc from coevar
+2271a2230
+>     real*8::ncolH !preproc from coevar
+2319a2279,2299
+>     ncolH = num2col(n(idx_H),n(:))
+>     ncolHe = num2col(n(idx_He),n(:))
+>     logHe = log10(ncolHe)
+>     logH = log10(ncolH)
+>     xe = min(n(idx_e) / (get_Hnuclei(n(:)) + 1d-40), 1d0)
+>     user_xray_H = fit_anytab2D(user_xray_H_anytabx(:), &
+>         user_xray_H_anytaby(:), &
+>         user_xray_H_anytabz(:,:), &
+>         user_xray_H_anytabxmul, &
+>         user_xray_H_anytabymul, &
+>         logH,logHe-logH)
+>     phiH = .3908d0*(1e0-xe**.4092)**1.7592 * 327.832286034056d0
+>     ratexH = 1d1**user_xray_H
+>     user_xray_He = fit_anytab2D(user_xray_He_anytabx(:), &
+>         user_xray_He_anytaby(:), &
+>         user_xray_He_anytabz(:,:), &
+>         user_xray_He_anytabxmul, &
+>         user_xray_He_anytabymul, &
+>         logH,logHe-logH)
+>     phiHe = .0554d0*(1d0-xe**.4614)**1.666 * 180.793458763612d0
+>     ratexHe = 1d1**user_xray_He
+2559c2539
+<     k(44) = H2_solomonLW_ramses(user_myH2_dissociation, user_myfluxLW)&
+---
+>     k(44) = H2_solomonLW(user_myfluxLW)&
+2585a2566,2577
+>     !H -> H+ + E
+>     k(53) = small + ((ratexH &
+>         * (1d0+phiH) + n(idx_He)&
+>         /(n(idx_H)+1d-40) * ratexHe * phiH)&
+>         * J21xray)
+> 
+>     !HE -> HE+ + E
+>     k(54) = small + ((ratexHe &
+>         * (1d0+phiHe) + n(idx_H)&
+>         /(n(idx_He)+1d-40) * ratexH * phiHe)&
+>         * J21xray)
+> 
+2744,2757d2735
+<   function H2_solomonLW_ramses(myH2_dissociation, myflux)
+<     use krome_commons
+<     use krome_constants
+<     implicit none
+<     real*8::H2_solomonLW_ramses,myH2_dissociation,myflux
+<     !real*8::JLW_1draine
+< 
+<     !JLW_1draine = 7.55476d-20   ! previous factor, don't know what it is
+<     !JLW_1draine = 5.6054d-20  ! J_LW with a draine spectrum of 1 Draine
+<     !JLW_1draine = 1.187e-19  ! J_LW with a flat FUV spectrum of 1 Draine
+<     H2_solomonLW_ramses = myH2_dissociation * myflux * eV_to_erg
+< 
+<   end function H2_solomonLW_ramses
+< 
+3644,3659c3622,3638
+<     arr_r1(1:52) = (/3,6,6,4,7,7,7,9,3,2,3,3,8,5,5,5,5,5,2,2,2,2&
+<         ,2,8,8,8,5,7,4,4,5,5,5,3,3,3,4,7,2,5,8,8,5,5,6,7,3,4,5,5,5&
+<         ,5/)
+<     arr_r2(1:52) = (/1,1,1,1,1,1,1,1,1,3,6,6,3,6,6,1,1,3&
+<         ,1,3,3,6,6,1,1,2,5,3,6,6,7,4,7,3,4,13,13,13,13,13,13,13,13,13&
+<         ,1,1,13,13,13,13,13,13/)
+<     arr_p1(1:52) = (/6,3,3,7,4,4,9,7&
+<         ,2,5,8,8,5,8,8,3,3,3,3,3,3,3,8,3,3,3,3,4,7,7,4,3,8,3,4,6,7,9&
+<         ,3,8,6,6,3,3,3,4,6,7,3,6,8,3/)
+<     arr_p2(1:52) = (/1,13,13,1&
+<         ,13,13,1,13,13,1,13,13,6,3,3,2,3,3,1,3,3,3,1,3,3,5,3,6,3,3,3&
+<         ,3,4,6,6,1,1,1,1,1,3,6,3,3,13,13,1,1,3,2,1&
+<         ,6/)
+<     arr_p3(1:52) = (/1,13,13,1,13,13,1,13,13,13,13,13,13&
+<         ,13,13,13,1,3,1,1,1,13,13,13,13,13,5,13,13,13,6,4,13,1,1,13&
+<         ,13,13,13,13,13,1,13,13,13,13,13,13,13,13,13,1/)
+---
+>     arr_r1(1:54) = (/3,6,6,4,7,7,7,9,3,2,3,3,8,5,5,5,5,5,2,2,2,2&
+>         ,2,8,8,8,5,7,4,4,5,5,5,3,3,3,4,7,2,5,8,8,5,5,6,7,3,4,5,5,5,5&
+>         ,3,4/)
+>     arr_r2(1:54) = (/1,1,1,1,1,1,1,1,1,3,6,6,3,6,6,1,1&
+>         ,3,1,3,3,6,6,1,1,2,5,3,6,6,7,4,7,3,4,13,13,13,13,13,13,13,13&
+>         ,13,1,1,13,13,13,13,13,13,13,13/)
+>     arr_p1(1:54) = (/6,3,3,7&
+>         ,4,4,9,7,2,5,8,8,5,8,8,3,3,3,3,3,3,3,8,3,3,3,3,4,7,7,4,3,8,3&
+>         ,4,6,7,9,3,8,6,6,3,3,3,4,6,7,3,6,8,3,6&
+>         ,7/)
+>     arr_p2(1:54) = (/1,13,13,1,13,13,1,13,13,1,13,13,6,3&
+>         ,3,2,3,3,1,3,3,3,1,3,3,5,3,6,3,3,3,3,4,6,6,1,1,1,1,1,3,6,3,3&
+>         ,13,13,1,1,3,2,1,6,1,1/)
+>     arr_p3(1:54) = (/1,13,13,1,13,13&
+>         ,1,13,13,13,13,13,13,13,13,13,1,3,1,1,1,13,13,13,13,13,5,13&
+>         ,13,13,6,4,13,1,1,13,13,13,13,13,13,1,13,13,13,13,13,13,13,13&
+>         ,13,1,13,13/)
+4926c4905
+< real*8::krome_fshieldHM,krome_fshieldH2,log10Tgas,asav2,asav3,asav0,asav1,asav6,asav7,asav4,asav5,a11,a10,a12,a1,a3,a2,a5,T,a7,a6,a9,a8,krome_fshieldH2j,bsav1,bsav0,bsav3,bsav2,bsav5,bsav4,bsav7,bsav6,a4
+---
+> real*8::phiHe,ncolHe,xe,krome_fshieldHM,krome_fshieldH2,user_xray_He,log10Tgas,asav2,asav3,asav0,asav1,asav6,asav7,asav4,asav5,ratexH,a11,a10,a12,logHe,phiH,a1,a3,a2,a5,T,a7,a6,a9,a8,user_xray_H,logH,krome_fshieldH2j,ratexHe,bsav1,bsav0,bsav3,bsav2,bsav5,bsav4,bsav7,bsav6,ncolH,a4
+4963a4943,4963
+> ncolH = num2col(n(idx_H),n(:))
+> ncolHe = num2col(n(idx_He),n(:))
+> logHe = log10(ncolHe)
+> logH = log10(ncolH)
+> xe = min(n(idx_e) / (get_Hnuclei(n(:)) + 1d-40), 1d0)
+> user_xray_H = fit_anytab2D(user_xray_H_anytabx(:), &
+>     user_xray_H_anytaby(:), &
+>     user_xray_H_anytabz(:,:), &
+>     user_xray_H_anytabxmul, &
+>     user_xray_H_anytabymul, &
+>     logH,logHe-logH)
+> phiH = .3908d0*(1e0-xe**.4092)**1.7592 * 327.832286034056d0
+> ratexH =  1d1**user_xray_H
+> user_xray_He = fit_anytab2D(user_xray_He_anytabx(:), &
+er_myH2_dissociation,     user_xray_He_anytaby(:), &
+>     user_xray_He_anytabz(:,:), &
+>     user_xray_He_anytabxmul, &
+>     user_xray_He_anytabymul, &
+>     logH,logHe-logH)
+> phiHe = .0554d0*(1d0-xe**.4614)**1.666 * 180.793458763612d0
+> ratexHe =  1d1**user_xray_He
+5004c5004
+< coe_tab(44) = H2_solomonLW_ramses(user_myH2_dissociation, user_myfluxLW)&
+---
+> coe_tab(44) = H2_solomonLW(user_myfluxLW)&
+5030a5031,5040
+> !H -> H+ + E
+> coe_tab(53) = small + ((ratexH &
+>     * (1d0+phiH) + n(idx_He)/(n(idx_H)+1d-40) * ratexHe * phiH)&
+>     * J21xray)
+> 
+> !HE -> HE+ + E
+> coe_tab(54) = small + ((ratexHe &
+>     * (1d0+phiHe) + n(idx_H)/(n(idx_He)+1d-40) * ratexH * phiHe)&
+>     * J21xray)
+> 
+5050c5060
+< !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+> !  KROME 14.08.dev on 2022-01-04 14:36:03
+5678c5688
+< !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+> !  KROME 14.08.dev on 2022-01-04 14:36:03
+6060c6070
+< !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+> !  KROME 14.08.dev on 2022-01-04 14:36:03
+6147c6157,6159
+<     +k(52)*n(idx_H2)
+---
+>     +k(52)*n(idx_H2) &
+>     +k(53)*n(idx_H) &
+>     +k(54)*n(idx_HE)
+6207c6219,6220
+<     +k(52)*n(idx_H2) - 2d0*nH2dust
+---
+>     +k(52)*n(idx_H2) &
+>     -k(53)*n(idx_H) - 2d0*nH2dust
+6226c6239,6240
+<     -k(48)*n(idx_HE)
+---
+>     -k(48)*n(idx_HE) &
+>     -k(54)*n(idx_HE)
+6277c6291,6292
+<     +k(52)*n(idx_H2)
+---
+>     +k(52)*n(idx_H2) &
+>     +k(53)*n(idx_H)
+6295c6310,6311
+<     +k(48)*n(idx_HE)
+---
+>     +k(48)*n(idx_HE) &
+>     +k(54)*n(idx_HE)
+6505a6522
+>     +k(53)  &
+6525a6543
+>     -k(53)  &
+6548a6567
+>     +k(53)  &
+6571d6589
+<     +k(37)  &
+6573c6591
+<     +k(35)*n(idx_H)  &
+---
+>     +k(37)  &
+6575c6593,6595
+<     -k(4)*n(idx_E)
+---
+>     +k(35)*n(idx_H)  &
+>     -k(4)*n(idx_E)  &
+>     +k(54)
+6588a6609
+>     -k(54)  &
+6600d6620
+<     +k(48)  &
+6602c6622,6624
+<     +k(30)*n(idx_Hj)
+---
+>     +k(48)  &
+>     +k(30)*n(idx_Hj)  &
+>     +k(54)
+7051a7074
+>     +k(53)  &
+7075a7099
+>     -k(53)  &
+7104a7129
+>     +k(53)  &
+7133d7157
+<     +k(37)  &
+7135c7159
+<     +k(35)*n(idx_H)  &
+---
+>     +k(37)  &
+7137c7161,7163
+<     -k(4)*n(idx_E)
+---
+>     +k(35)*n(idx_H)  &
+>     -k(4)*n(idx_E)  &
+>     +k(54)
+7154a7181
+>     -k(54)  &
+7172d7198
+<     +k(48)  &
+7174c7200,7202
+<     +k(30)*n(idx_Hj)
+---
+>     +k(48)  &
+>     +k(30)*n(idx_Hj)  &
+>     +k(54)
+7558c7586
+< !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+> !  KROME 14.08.dev on 2022-01-04 14:36:03
+7631c7659
+< integer,parameter::krome_nrea=52
+---
+> integer,parameter::krome_nrea=54
+7712,7719d7739
+< subroutine krome_set_user_myH2_dissociation(argset)
+< use krome_commons
+< implicit none
+< real*8 :: argset
+< user_myH2_dissociation = argset
+< end subroutine krome_set_user_myH2_dissociation
+< 
+< !*******************
+9706,9718d9725
+< !fraction of dust not evaporated
+< function krome_get_fevap(Tgas, n)
+< use krome_commons
+< use krome_getphys, ONLY:fevap
+< 
+< implicit none
+< real*8 :: Tgas, n(nspec), krome_get_fevap
+< 
+< krome_get_fevap = fevap(Tgas, n)
+< 
+< end function krome_get_fevap
+< 
+< !*************************
+10006c10013
+< !  KROME 14.08.dev on 2022-01-04 12:18:18
+---
+> !  KROME 14.08.dev on 2022-01-04 14:36:03
+10045c10052
+< real*8::rwork(520)
+---
+> real*8::rwork(515)
+10168c10175
+< real*8::rwork(520)
+---
+> real*8::rwork(515)
+10470a10478,10502
+> 
+> call init_anytab2D("ratexH.dat",user_xray_H_anytabx(:),&
+>     user_xray_H_anytaby(:),user_xray_H_anytabz(:,:),&
+>     user_xray_H_anytabxmul,user_xray_H_anytabymul)
+> call test_anytab2D("user_xray_H",user_xray_H_anytabx(:),&
+>     user_xray_H_anytaby(:),user_xray_H_anytabz(:,:),&
+>     user_xray_H_anytabxmul,user_xray_H_anytabymul)
+> call init_anytab2D("heatxH.dat",user_xheat_H_anytabx(:),&
+>     user_xheat_H_anytaby(:),user_xheat_H_anytabz(:,:),&
+>     user_xheat_H_anytabxmul,user_xheat_H_anytabymul)
+> call test_anytab2D("user_xheat_H",user_xheat_H_anytabx(:),&
+>     user_xheat_H_anytaby(:),user_xheat_H_anytabz(:,:),&
+>     user_xheat_H_anytabxmul,user_xheat_H_anytabymul)
+> call init_anytab2D("ratexHe.dat",user_xray_He_anytabx(:),&
+>     user_xray_He_anytaby(:),user_xray_He_anytabz(:,:),&
+>     user_xray_He_anytabxmul,user_xray_He_anytabymul)
+> call test_anytab2D("user_xray_He",user_xray_He_anytabx(:),&
+>     user_xray_He_anytaby(:),user_xray_He_anytabz(:,:),&
+>     user_xray_He_anytabxmul,user_xray_He_anytabymul)
+> call init_anytab2D("heatxHe.dat",user_xheat_He_anytabx(:),&
+>     user_xheat_He_anytaby(:),user_xheat_He_anytabz(:,:),&
+>     user_xheat_He_anytabxmul,user_xheat_He_anytabymul)
+> call test_anytab2D("user_xheat_He",user_xheat_He_anytabx(:),&
+>     user_xheat_He_anytaby(:),user_xheat_He_anytabz(:,:),&
+>     user_xheat_He_anytabxmul,user_xheat_He_anytabymul)
